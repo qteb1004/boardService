@@ -1,5 +1,7 @@
 package com.example.exam_board.config;
 
+import com.example.exam_board.service.PrincipalOauth2UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -13,6 +15,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true) // 컨트롤러에서 인증되지않은 사용자가 특정 컨트롤러에 접근할때 인증을 먼저 받고올 수 있도록....하는..기능.....
 public class SecurityConfig {
+    @Autowired
+    PrincipalOauth2UserService principalOauth2UserService;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
         http
@@ -23,13 +28,19 @@ public class SecurityConfig {
 
                 .formLogin((form)->form
                         .loginPage("/user/login")
-                        .loginProcessingUrl("/login")
+                        .loginProcessingUrl("/auth/login")
                         .usernameParameter("userId")
                         .defaultSuccessUrl("/articles/lists", true))
 
                 .logout(out->out
                         .logoutSuccessUrl("/articles/lists")
                         .logoutUrl("/logout"))
+
+                .oauth2Login(oAuth -> oAuth
+                        .loginPage("/loginForm")
+                        .defaultSuccessUrl("/articles/lists", true)
+                        .userInfoEndpoint(userInfo-> userInfo
+                                .userService(principalOauth2UserService)))
 
                 .csrf(csrf -> csrf.disable());
         return http.build();
